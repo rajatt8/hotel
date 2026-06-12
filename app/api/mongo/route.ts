@@ -1,26 +1,41 @@
 import { NextResponse } from "next/server";
-import { MongoClient } from "mongodb";
+import { createClient } from "@libsql/client";
 
-const uri = process.env.MONGODB_URI || "mongodb+srv://hotel-admin:hotel123456@cluster0.csal0w6.mongodb.net/?appName=Cluster0";
-const client = new MongoClient(uri);
+const turso = createClient({
+  url: process.env.TURSO_DATABASE_URL!,
+  authToken: process.env.TURSO_AUTH_TOKEN!,
+});
 
-async function getCollection() {
-  await client.connect();
-  const db = client.db("test");
-  return db.collection("hotel_data");
+// Table create karo (pehli baar run hoga)
+async function initTable() {
+  try {
+    await turso.execute(`
+      CREATE TABLE IF NOT EXISTS hotel_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT UNIQUE,
+        value TEXT
+      )
+    `);
+  } catch (error) {
+    console.error("Init error:", error);
+  }
 }
 
 export async function GET(request: Request) {
   try {
+    await initTable();
     const { searchParams } = new URL(request.url);
     const collectionName = searchParams.get("collection");
-    const collection = await getCollection();
-    const data = await collection.findOne({});
     
-    if (collectionName && data) {
-      return NextResponse.json(data[collectionName] || []);
+    const result = await turso.execute({
+      sql: "SELECT value FROM hotel_data WHERE key = ?",
+      args: [collectionName || "fullData"]
+    });
+    
+    if (result.rows.length > 0) {
+      return NextResponse.json(JSON.parse(result.rows[0].value as string));
     }
-    return NextResponse.json(data || {});
+    return NextResponse.json({});
   } catch (error) {
     console.error("GET Error:", error);
     return NextResponse.json({});
@@ -29,24 +44,23 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    await initTable();
     const body = await request.json();
     const { collection: collectionName, data } = body;
-    const collection = await getCollection();
-    
-    const existing = await collection.findOne({});
-    let fullData: any = existing || {};
     
     if (collectionName && data) {
-      fullData[collectionName] = data;
+      await turso.execute({
+        sql: "INSERT OR REPLACE INTO hotel_data (key, value) VALUES (?, ?)",
+        args: [collectionName, JSON.stringify(data)]
+      });
     } else {
-      fullData = { ...fullData, ...body };
+      for (const [key, value] of Object.entries(body)) {
+        await turso.execute({
+          sql: "INSERT OR REPLACE INTO hotel_data (key, value) VALUES (?, ?)",
+          args: [key, JSON.stringify(value)]
+        });
+      }
     }
-    
-    await collection.updateOne(
-      {},
-      { $set: fullData },
-      { upsert: true }
-    );
     
     return NextResponse.json({ success: true });
   } catch (error) {
