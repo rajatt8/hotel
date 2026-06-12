@@ -464,6 +464,35 @@ export default function HotelMidway() {
     showToast("Booking confirmed! We'll contact you soon.");
   };
 
+  const showBookingConfirmationPopup = () => {
+    if (
+      !bookingDetails.name ||
+      !bookingDetails.phone || 
+      bookingDetails.phone.length !== 10 ||
+      !bookingDetails.email || 
+      !bookingDetails.email.includes('@') ||
+      !bookingDetails.checkIn ||
+      !bookingDetails.checkOut ||
+      new Date(bookingDetails.checkIn) < new Date() ||
+      new Date(bookingDetails.checkOut) <= new Date(bookingDetails.checkIn)
+    ) {
+      showToast("Please fill all details correctly", "error");
+      return;
+    }
+    
+    const confirmBooking = window.confirm(
+      "📞 IMPORTANT!\n\n" +
+      "Please call +91 98165 86311 to confirm your booking.\n\n" +
+      "💰 Advance payment will be required to confirm your booking.\n\n" +
+      "Press OK if you have made the payment and want to complete booking.\n" +
+      "Press Cancel to go back."
+    );
+    
+    if (confirmBooking) {
+      submitBooking();
+    }
+  };
+
   const updateBookingStatus = (bookingId: number, newStatus: string) => {
     setBookings(prev => prev.map(b => 
       b.id === bookingId ? { ...b, status: newStatus } : b
@@ -1225,7 +1254,7 @@ export default function HotelMidway() {
                     new Date(bookingDetails.checkOut) <= new Date(bookingDetails.checkIn)
                   ) ? 0.5 : 1
                 }}
-                onClick={submitBooking}
+                onClick={showBookingConfirmationPopup}
                 disabled={
                   !bookingDetails.name ||
                   !bookingDetails.phone || 
