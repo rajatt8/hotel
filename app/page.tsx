@@ -1087,7 +1087,7 @@ export default function HotelMidway() {
         </footer>
       </div>
 
-      {/* PAYMENT INFO POPUP - FIXED AMOUNT ₹2000 */}
+      {/* PAYMENT INFO POPUP - UPDATED TEXT */}
       {showPaymentPopup && (
         <div className="modal-overlay" onClick={() => setShowPaymentPopup(false)} style={{ zIndex: 10001 }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450 }}>
@@ -1128,9 +1128,9 @@ export default function HotelMidway() {
                 marginBottom: 20,
                 textAlign: "center"
               }}>
-                <div style={{ fontSize: 13, color: "#666", marginBottom: 5 }}>💰 Advance Payment Required</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#2e7d32" }}>
-                  ₹2,000 required to confirm booking
+                <div style={{ fontSize: 13, color: "#666", marginBottom: 5 }}>💰 Advance Payment Required To Confirm Booking</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "#2e7d32", marginTop: 5 }}>
+                  (Half Payment required to confirm booking)
                 </div>
               </div>
               
