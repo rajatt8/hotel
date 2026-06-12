@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI!;
+const uri = process.env.MONGODB_URI || "mongodb+srv://hotel-admin:hotel123456@cluster0.csal0w6.mongodb.net/?appName=Cluster0";
 const client = new MongoClient(uri);
 
 async function getCollection() {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const collection = await getCollection();
     
     const existing = await collection.findOne({});
-    let fullData = existing || {};
+    let fullData: any = existing || {};
     
     if (collectionName && data) {
       fullData[collectionName] = data;
