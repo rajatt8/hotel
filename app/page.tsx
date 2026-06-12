@@ -169,7 +169,6 @@ export default function HotelMidway() {
   const [isFetched, setIsFetched] = useState(false);
   
   const [view, setView] = useState("home");
-  const [activeCat, setActiveCat] = useState("all");
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminAuth, setAdminAuth] = useState(false);
   const [adminPass, setAdminPass] = useState("");
@@ -464,6 +463,8 @@ export default function HotelMidway() {
     showToast("Booking confirmed! We'll contact you soon.");
   };
 
+  const [showPaymentPopup, setShowPaymentPopup] = useState(false);
+
   const showBookingConfirmationPopup = () => {
     if (
       !bookingDetails.name ||
@@ -480,17 +481,12 @@ export default function HotelMidway() {
       return;
     }
     
-    const confirmBooking = window.confirm(
-      "📞 IMPORTANT!\n\n" +
-      "Please call +91 98165 86311 to confirm your booking.\n\n" +
-      "💰 Advance payment will be required to confirm your booking.\n\n" +
-      "Press OK if you have made the payment and want to complete booking.\n" +
-      "Press Cancel to go back."
-    );
-    
-    if (confirmBooking) {
-      submitBooking();
-    }
+    setShowPaymentPopup(true);
+  };
+
+  const confirmBookingWithPayment = () => {
+    setShowPaymentPopup(false);
+    submitBooking();
   };
 
   const updateBookingStatus = (bookingId: number, newStatus: string) => {
@@ -621,16 +617,8 @@ export default function HotelMidway() {
   
   const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : 0;
-  const filteredRooms = activeCat === "all" ? rooms : rooms.filter(r => r.category === activeCat);
+  const filteredRooms = rooms;
 
-  const categories = [
-    { key: "all", label: "All Rooms" },
-    { key: "standard", label: "Standard" },
-    { key: "deluxe", label: "Deluxe" },
-    { key: "suite", label: "Suites" },
-    { key: "premium", label: "Premium" }
-  ];
-  
   const adminMenuItems = [
     { id: "dashboard", label: "📊 Dashboard", name: "Dashboard" },
     { id: "rooms", label: "🛏️ Rooms", name: "Rooms" },
@@ -1043,7 +1031,6 @@ export default function HotelMidway() {
         {view === "rooms" && (
           <section style={{ padding: "80px 40px", background: "#fff" }}>
             <div style={{ textAlign: "center", marginBottom: 48 }}><div style={{ fontSize: 10, letterSpacing: 5, color: "#b8860b" }}>OUR COLLECTION</div><h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 48, fontWeight: 300 }}>Choose Your Stay</h2></div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 40, flexWrap: "wrap" }}>{categories.map(c => (<button key={c.key} onClick={() => setActiveCat(c.key)} style={{ background: activeCat === c.key ? "#b8860b" : "transparent", color: activeCat === c.key ? "#fff" : "#666", border: activeCat === c.key ? "none" : "1px solid #ddd", padding: "8px 24px", borderRadius: 30, cursor: "pointer", fontSize: 11 }}>{c.label}</button>))}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 30, maxWidth: 1200, margin: "0 auto" }} className="grid-3">
               {filteredRooms.map((room: any) => (
                 <div key={room.id} className="card-hover" style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12 }} onClick={() => openRoomDetail(room)}>
@@ -1099,6 +1086,90 @@ export default function HotelMidway() {
           <div style={{ height: 1, background: "#333", margin: "20px 0" }} /><div style={{ textAlign: "center", fontSize: 10, color: "#666", letterSpacing: 2 }}>© 2024 HOTEL MIDWAY. ALL RIGHTS RESERVED.</div>
         </footer>
       </div>
+
+      {/* PAYMENT INFO POPUP */}
+      {showPaymentPopup && (
+        <div className="modal-overlay" onClick={() => setShowPaymentPopup(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450 }}>
+            <span className="modal-close" onClick={() => setShowPaymentPopup(false)}>×</span>
+            <div style={{ padding: "25px", textAlign: "center" }}>
+              <div style={{ 
+                width: 70, 
+                height: 70, 
+                background: "#fff3e0", 
+                borderRadius: "50%", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                margin: "0 auto 20px"
+              }}>
+                <i className="fas fa-phone-alt" style={{ fontSize: 32, color: "#b8860b" }}></i>
+              </div>
+              
+              <h3 style={{ fontSize: 22, marginBottom: 10, color: "#1a1a1a" }}>📞 Confirm Your Booking</h3>
+              
+              <div style={{ 
+                background: "#f0e8dd", 
+                padding: "12px 16px", 
+                borderRadius: 10,
+                marginBottom: 20,
+                textAlign: "left"
+              }}>
+                <div style={{ fontSize: 13, color: "#666", marginBottom: 5 }}>📌 Call us on:</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "#b8860b", letterSpacing: 1 }}>
+                  +91 98165 86311
+                </div>
+              </div>
+              
+              <div style={{ 
+                background: "#e8f4e8", 
+                padding: "12px 16px", 
+                borderRadius: 10,
+                marginBottom: 20,
+                textAlign: "left"
+              }}>
+                <div style={{ fontSize: 13, color: "#666", marginBottom: 5 }}>💰 Advance Payment Required</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#2e7d32" }}>
+                  ₹{(selectedRoom.price * Math.ceil((new Date(bookingDetails.checkOut).getTime() - new Date(bookingDetails.checkIn).getTime()) / (1000*60*60*24))).toLocaleString()}
+                </div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 5 }}>
+                  *Partial payment to confirm your booking
+                </div>
+              </div>
+              
+              <p style={{ fontSize: 12, color: "#888", marginBottom: 20, lineHeight: 1.5 }}>
+                Please call the number above to confirm availability and make advance payment. 
+                Your booking will be confirmed only after payment.
+              </p>
+              
+              <button 
+                className="btn-gold" 
+                style={{ width: "100%", padding: "12px" }}
+                onClick={confirmBookingWithPayment}
+              >
+                I have made the payment
+              </button>
+              
+              <button 
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  marginTop: 10,
+                  background: "transparent",
+                  border: "1px solid #ddd",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  color: "#666"
+                }}
+                onClick={() => setShowPaymentPopup(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* BOOKING MODAL */}
       {bookingModal && selectedRoom && (
